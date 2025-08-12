@@ -1,0 +1,334 @@
+# Stock API Backend - HTTP Tests
+# Use this file with REST Client extension in VS Code or similar tools
+# Make sure the server is running on localhost:8080
+
+### Variables
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+### ==================================================
+### 1. HEALTH CHECK
+### ==================================================
+
+### Check if the API is running
+GET {{baseUrl}}/health
+Accept: {{contentType}}
+
+### ==================================================
+### 2. STOCK SYNC (Run this first to populate data)
+### ==================================================
+
+### Sync all stocks from KarenAI API
+# This endpoint fetches data from the external API and populates the database
+POST {{baseUrl}}/stocks/sync
+Accept: {{contentType}}
+
+### ==================================================
+### 3. STOCK ENDPOINTS
+### ==================================================
+
+### Get all stocks with their latest analyst coverage
+GET {{baseUrl}}/stocks
+Accept: {{contentType}}
+
+### Get stocks with pagination (first page, 5 items per page)
+GET {{baseUrl}}/stocks?page=1&page_size=5
+Accept: {{contentType}}
+
+### Get stocks with pagination (second page, 5 items per page)
+GET {{baseUrl}}/stocks?page=2&page_size=5
+Accept: {{contentType}}
+
+### Get stocks with pagination (default page size of 20)
+GET {{baseUrl}}/stocks?page=1
+Accept: {{contentType}}
+
+### Get specific stock by symbol (replace AAPL with any stock symbol you have)
+# First run the sync endpoint to see which symbols are available
+GET {{baseUrl}}/stocks/AAPL
+Accept: {{contentType}}
+
+### Get specific stock by symbol - Example with different stock
+GET {{baseUrl}}/stocks/AKBA
+Accept: {{contentType}}
+
+### Get specific stock by symbol - Example with another stock
+GET {{baseUrl}}/stocks/CECO
+Accept: {{contentType}}
+
+### Search for existing stock (this endpoint searches in your database)
+GET {{baseUrl}}/stocks/search/AAPL
+Accept: {{contentType}}
+
+### Search for non-existing stock (should return error message)
+GET {{baseUrl}}/stocks/search/NONEXISTENT
+Accept: {{contentType}}
+
+### Refresh specific stock data (triggers a full sync)
+POST {{baseUrl}}/stocks/AAPL/refresh
+Accept: {{contentType}}
+
+### ==================================================
+### 4. RECOMMENDATIONS
+### ==================================================
+
+### Get top stock recommendations based on analyst sentiment
+# This is the core feature - returns stocks ranked by our algorithm
+GET {{baseUrl}}/stocks/recommendations
+Accept: {{contentType}}
+
+### Get recommendations with pagination (first page, 3 items per page)
+GET {{baseUrl}}/stocks/recommendations?page=1&page_size=3
+Accept: {{contentType}}
+
+### Get recommendations with pagination (second page, 3 items per page)
+GET {{baseUrl}}/stocks/recommendations?page=2&page_size=3
+Accept: {{contentType}}
+
+### Get recommendations with pagination (default page size of 20)
+GET {{baseUrl}}/stocks/recommendations?page=1
+Accept: {{contentType}}
+
+### ==================================================
+### 5. PAGINATION TESTS
+### ==================================================
+
+### Test pagination with invalid page number (should default to page 1)
+GET {{baseUrl}}/stocks?page=0&page_size=5
+Accept: {{contentType}}
+
+### Test pagination with invalid page size (should default to 20)
+GET {{baseUrl}}/stocks?page=1&page_size=0
+Accept: {{contentType}}
+
+### Test pagination with page size over limit (should cap at 100)
+GET {{baseUrl}}/stocks?page=1&page_size=150
+Accept: {{contentType}}
+
+### Test pagination with only page parameter (should use default page_size=20)
+GET {{baseUrl}}/stocks?page=1
+Accept: {{contentType}}
+
+### Test pagination with only page_size parameter (should use page=1)
+GET {{baseUrl}}/stocks?page_size=10
+Accept: {{contentType}}
+
+### Test pagination edge case - request page beyond total pages
+GET {{baseUrl}}/stocks?page=999&page_size=10
+Accept: {{contentType}}
+
+### ==================================================
+### 6. ERROR HANDLING TESTS
+### ==================================================
+
+### Test invalid endpoint (should return 404)
+GET {{baseUrl}}/invalid-endpoint
+Accept: {{contentType}}
+
+### Test stock that doesn't exist
+GET {{baseUrl}}/stocks/INVALID_STOCK
+Accept: {{contentType}}
+
+### Test malformed request
+POST {{baseUrl}}/stocks/sync/invalid
+Accept: {{contentType}}
+
+### ==================================================
+### 6. INTEGRATION WORKFLOW TEST
+### ==================================================
+
+### Complete workflow test:
+### 1. Check health
+### 2. Sync data
+### 3. Get all stocks
+### 4. Get recommendations
+### 5. Get specific stock details
+
+### Step 1: Health check
+GET {{baseUrl}}/health
+Accept: {{contentType}}
+
+###
+
+### Step 2: Sync data from external API
+POST {{baseUrl}}/stocks/sync
+Accept: {{contentType}}
+
+###
+
+### Step 3: Verify data was synced - get all stocks
+GET {{baseUrl}}/stocks
+Accept: {{contentType}}
+
+###
+
+### Step 3b: Test pagination with first page of stocks
+GET {{baseUrl}}/stocks?page=1&page_size=5
+Accept: {{contentType}}
+
+###
+
+### Step 4: Get recommendations
+GET {{baseUrl}}/stocks/recommendations
+Accept: {{contentType}}
+
+###
+
+### Step 4b: Test pagination with recommendations
+GET {{baseUrl}}/stocks/recommendations?page=1&page_size=3
+Accept: {{contentType}}
+
+###
+
+### Step 5: Get details for top recommended stock
+# Replace with actual stock symbol from recommendations
+GET {{baseUrl}}/stocks/TRIN
+Accept: {{contentType}}
+
+### ==================================================
+### 7. PERFORMANCE TESTS
+### ==================================================
+
+### Test multiple rapid requests (uncomment to test)
+# GET {{baseUrl}}/stocks
+# Accept: {{contentType}}
+
+# ###
+
+# GET {{baseUrl}}/stocks
+# Accept: {{contentType}}
+
+# ###
+
+# GET {{baseUrl}}/stocks/recommendations
+# Accept: {{contentType}}
+
+### ==================================================
+### 8. CORS TEST (if testing from browser)
+### ==================================================
+
+### OPTIONS request to test CORS preflight
+OPTIONS {{baseUrl}}/stocks
+Origin: http://localhost:3000
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Content-Type
+
+### ==================================================
+### 9. EXPECTED RESPONSE FORMATS
+### ==================================================
+
+### All successful responses follow this format:
+# {
+#   "success": true,
+#   "data": { ... actual data ... }
+# }
+
+### All error responses follow this format:
+# {
+#   "success": false,
+#   "error": "Error message description"
+# }
+
+### Paginated response format:
+# {
+#   "success": true,
+#   "data": {
+#     "data": [ ... array of items ... ],
+#     "meta": {
+#       "page": 1,
+#       "page_size": 20,
+#       "total_items": 150,
+#       "total_pages": 8,
+#       "has_next": true,
+#       "has_previous": false
+#     }
+#   }
+# }
+
+### Stock object format:
+# {
+#   "id": 1,
+#   "symbol": "AAPL",
+#   "name": "Apple Inc.",
+#   "created_at": "2025-01-08T...",
+#   "updated_at": "2025-01-08T...",
+#   "latest_analysis": [
+#     {
+#       "id": 1,
+#       "stock_id": 1,
+#       "target_from": "$180.00",
+#       "target_to": "$190.00",
+#       "action": "target raised by",
+#       "brokerage": "Morgan Stanley",
+#       "rating_from": "Buy",
+#       "rating_to": "Buy",
+#       "analysis_date": "2025-01-08T...",
+#       "created_at": "2025-01-08T..."
+#     }
+#   ]
+# }
+
+### Recommendation object format:
+# {
+#   "stock": { ... stock with analysis ... },
+#   "score": 85.5,
+#   "reason": "Buy rating from Morgan Stanley, Price target raised by 5.6%",
+#   "confidence": "High"
+# }
+
+### ==================================================
+### 10. TESTING CHECKLIST
+### ==================================================
+
+# □ 1. Start the backend server (go run main.go or make run)
+# □ 2. Ensure CockroachDB is running
+# □ 3. Run health check test
+# □ 4. Run sync endpoint to populate data
+# □ 5. Test all GET endpoints (both paginated and non-paginated)
+# □ 6. Test pagination with different page sizes and page numbers
+# □ 7. Test pagination edge cases (invalid params, out of range pages)
+# □ 8. Test error cases
+# □ 9. Verify response formats match expected structure
+# □ 10. Test with different stock symbols
+# □ 11. Verify recommendations algorithm works
+# □ 12. Test CORS if integrating with frontend
+
+### ==================================================
+### 11. TROUBLESHOOTING
+### ==================================================
+
+### If you get connection errors:
+# - Make sure the server is running on port 8080
+# - Check if CockroachDB is running
+# - Verify environment variables are set
+
+### If sync endpoint fails:
+# - Check KarenAI API token in .env file
+# - Verify internet connection
+# - Check server logs for detailed error messages
+
+### If no stocks returned:
+# - Run the sync endpoint first
+# - Check database has data: cockroach sql --insecure -e "SELECT * FROM stocks;"
+
+### If recommendations empty:
+# - Ensure stocks have analysis data
+# - Check recommendation algorithm parameters in stock_service.go
+
+### ==================================================
+### 12. EXAMPLE STOCK SYMBOLS (from KarenAI API)
+### ==================================================
+
+# Based on the API response, these stocks should be available after sync:
+# - AKBA (Akebia Therapeutics)
+# - CECO (CECO Environmental)
+# - BLND (Blend Labs)
+# - FLOC (Flowco)
+# - VYGR (Voyager Therapeutics)
+# - BCBP (BCB Bancorp)
+# - LAMR (Lamar Advertising)
+# - TRIN (Trinity Capital)
+# - AMP (Ameriprise Financial)
+# - MODG (Topgolf Callaway Brands)
+
+### Test with these symbols after running sync

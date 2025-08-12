@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # CockroachDB single-node cluster for development
+  cockroachdb:
+    image: cockroachdb/cockroach:v23.1.11
+    container_name: stock-api-cockroachdb
+    hostname: cockroachdb
+    ports:
+      - "26257:26257"  # Database port
+      - "8080:8080"    # Admin UI port (NOTE: This conflicts with your API port)
+    command: start-single-node --insecure --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080
+    volumes:
+      - cockroach_data:/cockroach/cockroach-data
+      - ./init:/docker-entrypoint-initdb.d
+    environment:
+      - COCKROACH_DATABASE=stockdb
+      - COCKROACH_USER=root
+    networks:
+      - stock-api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Optional: CockroachDB Admin UI on different port
+  cockroachdb-ui:
+    image: cockroachdb/cockroach:v23.1.11
+    container_name: stock-api-cockroachdb-ui
+    depends_on:
+      - cockroachdb
+    ports:
+      - "8081:8080"  # Admin UI on port 8081 to avoid conflict
+    command: start-single-node --insecure --listen-addr=cockroachdb:26257 --http-addr=0.0.0.0:8080 --join=cockroachdb:26257
+    networks:
+      - stock-api-network
+    profiles:
+      - ui  # Optional service, start with: docker-compose --profile ui up
+
+  # Database initialization container
+  db-init:
+    image: cockroachdb/cockroach:v23.1.11
+    container_name: stock-api-db-init
+    depends_on:
+      cockroachdb:
+        condition: service_healthy
+    command: |
+      bash -c "
+        echo 'Waiting for CockroachDB to be ready...'
+        sleep 5
+        echo 'Creating database...'
+        cockroach sql --insecure --host=cockroachdb:26257 --execute='CREATE DATABASE IF NOT EXISTS stockdb;'
+        echo 'Database setup completed!'
+      "
+    networks:
+      - stock-api-network
+    restart: "no"  # Run once and exit
+
+volumes:
+  cockroach_data:
+    driver: local
+
+networks:
+  stock-api-network:
+    driver: bridge
