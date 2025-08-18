@@ -58,55 +58,6 @@ func (r *RecommendationScoreRepository) UpsertRecommendationScore(score *models.
 	return err
 }
 
-func (r *RecommendationScoreRepository) GetTopRecommendations(limit int) ([]models.RecommendationWithStock, error) {
-	query := `
-		SELECT 
-			rs.id, rs.stock_id, rs.total_score, rs.rating_score, rs.rating_change_score,
-			rs.target_change_score, rs.action_score, rs.coverage_score, rs.confidence,
-			rs.reason, rs.latest_analysis_id, rs.calculated_at, rs.created_at, rs.updated_at,
-			s.id, s.symbol, s.name, s.created_at, s.updated_at
-		FROM recommendation_scores rs
-		JOIN stocks s ON rs.stock_id = s.id
-		ORDER BY rs.total_score DESC
-		LIMIT $1`
-
-	rows, err := r.db.Query(query, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var recommendations []models.RecommendationWithStock
-	var stockRepo = NewStockRepository(r.db)
-
-	for rows.Next() {
-		var rec models.RecommendationWithStock
-		var stock models.Stock
-
-		err := rows.Scan(
-			&rec.ID, &rec.StockID, &rec.TotalScore, &rec.RatingScore, &rec.RatingChangeScore,
-			&rec.TargetChangeScore, &rec.ActionScore, &rec.CoverageScore, &rec.Confidence,
-			&rec.Reason, &rec.LatestAnalysisID, &rec.CalculatedAt, &rec.CreatedAt, &rec.UpdatedAt,
-			&stock.ID, &stock.Symbol, &stock.Name, &stock.CreatedAt, &stock.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get latest analysis for this stock
-		stockWithAnalysis := models.StockWithAnalysis{Stock: stock}
-		analyses, err := stockRepo.GetLatestAnalysisForStock(stock.ID, 5)
-		if err != nil && err != sql.ErrNoRows {
-			return nil, err
-		}
-		stockWithAnalysis.LatestAnalysis = analyses
-
-		rec.Stock = stockWithAnalysis
-		recommendations = append(recommendations, rec)
-	}
-
-	return recommendations, nil
-}
 
 func (r *RecommendationScoreRepository) GetTopRecommendationsPaginated(page, pageSize int) (*models.PaginatedResponse[models.RecommendationWithStock], error) {
 	if page < 1 {

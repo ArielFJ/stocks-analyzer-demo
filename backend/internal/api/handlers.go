@@ -165,35 +165,32 @@ func GetRecommendationsHandler(stockService *services.StockService) http.Handler
 		pageStr := r.URL.Query().Get("page")
 		pageSizeStr := r.URL.Query().Get("page_size")
 
-		if pageStr != "" || pageSizeStr != "" {
-			// Use paginated response
-			page, err := strconv.Atoi(pageStr)
-			if err != nil || page < 1 {
-				page = 1
-			}
-
-			pageSize, err := strconv.Atoi(pageSizeStr)
-			if err != nil || pageSize < 1 {
-				pageSize = 20
-			}
-
-			paginatedRecommendations, err := stockService.GetRecommendationsPaginated(page, pageSize)
-			if err != nil {
-				writeErrorResponse(w, http.StatusInternalServerError, "Failed to get recommendations: "+err.Error())
-				return
-			}
-
-			writeSuccessResponse(w, paginatedRecommendations)
-		} else {
-			// Use non-paginated response for backward compatibility
-			recommendations, err := stockService.GetRecommendations()
-			if err != nil {
-				writeErrorResponse(w, http.StatusInternalServerError, "Failed to get recommendations: "+err.Error())
-				return
-			}
-
-			writeSuccessResponse(w, recommendations)
+		if pageStr == "" {
+			pageStr = "1"
 		}
+
+		if pageSizeStr == "" {
+			pageSizeStr = "20"
+		}
+
+		// Use paginated response
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		pageSize, err := strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 20
+		}
+
+		paginatedRecommendations, err := stockService.GetRecommendationsPaginated(page, pageSize)
+		if err != nil {
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to get recommendations: "+err.Error())
+			return
+		}
+
+		writeSuccessResponse(w, paginatedRecommendations)
 	}
 }
 

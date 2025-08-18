@@ -39,9 +39,6 @@ func (s *StockService) CanStartStockSync() (bool, error) {
 	return s.processRepo.CanStartStockSync()
 }
 
-func (s *StockService) GetAllStocksWithMetrics() ([]models.StockWithAnalysis, error) {
-	return s.repo.GetStocksWithAnalysis()
-}
 
 func (s *StockService) GetStocksWithMetricsPaginated(page, pageSize int, filters models.StockFilterParams) (*models.PaginatedResponse[models.StockWithAnalysis], error) {
 	return s.repo.GetStocksWithAnalysisPaginated(page, pageSize, filters)
@@ -169,26 +166,6 @@ func (s *StockService) SyncAllStocks() error {
 	return nil
 }
 
-func (s *StockService) GetRecommendations() ([]models.StockRecommendation, error) {
-	// Get top 10 recommendations from pre-calculated scores
-	recommendations, err := s.recScoreRepo.GetTopRecommendations(10)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to legacy format for backward compatibility
-	var result []models.StockRecommendation
-	for _, rec := range recommendations {
-		result = append(result, models.StockRecommendation{
-			Stock:      rec.Stock,
-			Score:      rec.TotalScore,
-			Reason:     rec.Reason,
-			Confidence: rec.Confidence,
-		})
-	}
-
-	return result, nil
-}
 
 func (s *StockService) GetRecommendationsPaginated(page, pageSize int) (*models.PaginatedResponse[models.StockRecommendation], error) {
 	if page < 1 {

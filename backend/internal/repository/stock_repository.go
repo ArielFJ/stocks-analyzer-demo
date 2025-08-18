@@ -78,31 +78,6 @@ func (r *StockRepository) GetStockBySymbol(symbol string) (*models.Stock, error)
 	return stock, err
 }
 
-func (r *StockRepository) GetAllStocks() ([]models.Stock, error) {
-	query := `
-		SELECT id, symbol, name, created_at, updated_at
-		FROM stocks ORDER BY symbol`
-
-	rows, err := r.db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var stocks []models.Stock
-	for rows.Next() {
-		var stock models.Stock
-		err := rows.Scan(
-			&stock.ID, &stock.Symbol, &stock.Name, &stock.CreatedAt, &stock.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		stocks = append(stocks, stock)
-	}
-
-	return stocks, nil
-}
 
 func (r *StockRepository) CreateStockAnalysis(analysis *models.StockAnalysis) error {
 	// First check if analysis already exists
@@ -189,72 +164,6 @@ func (r *StockRepository) GetLatestAnalysisForStock(stockID int, limit int) ([]m
 	return analyses, nil
 }
 
-func (r *StockRepository) GetStocksWithAnalysis() ([]models.StockWithAnalysis, error) {
-	query := `
-		SELECT 
-			s.id, s.symbol, s.name, s.created_at, s.updated_at,
-			COALESCE(sa.id, 0) as analysis_id, COALESCE(sa.target_from, '') as target_from, 
-			COALESCE(sa.target_to, '') as target_to, COALESCE(sa.action, '') as action,
-			COALESCE(sa.brokerage, '') as brokerage, COALESCE(sa.rating_from, '') as rating_from,
-			COALESCE(sa.rating_to, '') as rating_to, sa.analysis_date, sa.created_at as analysis_created_at
-		FROM stocks s
-		LEFT JOIN LATERAL (
-			SELECT id, target_from, target_to, action, brokerage, rating_from, rating_to, analysis_date, created_at
-			FROM stock_analysis
-			WHERE stock_id = s.id
-			ORDER BY analysis_date DESC
-			LIMIT 3
-		) sa ON true
-		ORDER BY s.symbol, sa.analysis_date DESC`
-
-	rows, err := r.db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	stocksMap := make(map[int]*models.StockWithAnalysis)
-
-	for rows.Next() {
-		var stock models.Stock
-		var analysis models.StockAnalysis
-		var analysisID sql.NullInt64
-		var analysisDate sql.NullTime
-		var analysisCreatedAt sql.NullTime
-
-		err := rows.Scan(
-			&stock.ID, &stock.Symbol, &stock.Name, &stock.CreatedAt, &stock.UpdatedAt,
-			&analysisID, &analysis.TargetFrom, &analysis.TargetTo, &analysis.Action,
-			&analysis.Brokerage, &analysis.RatingFrom, &analysis.RatingTo, &analysisDate, &analysisCreatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
-		}
-
-		stockWithAnalysis, exists := stocksMap[stock.ID]
-		if !exists {
-			stockWithAnalysis = &models.StockWithAnalysis{
-				Stock: stock,
-			}
-			stocksMap[stock.ID] = stockWithAnalysis
-		}
-
-		if analysisID.Valid {
-			analysis.ID = int(analysisID.Int64)
-			analysis.StockID = stock.ID
-			analysis.AnalysisDate = analysisDate.Time
-			analysis.CreatedAt = analysisCreatedAt.Time
-			stockWithAnalysis.LatestAnalysis = append(stockWithAnalysis.LatestAnalysis, analysis)
-		}
-	}
-
-	var result []models.StockWithAnalysis
-	for _, stock := range stocksMap {
-		result = append(result, *stock)
-	}
-
-	return result, nil
-}
 
 func (r *StockRepository) GetStocksWithAnalysisPaginated(page, pageSize int, filters models.StockFilterParams) (*models.PaginatedResponse[models.StockWithAnalysis], error) {
 	if page < 1 {
