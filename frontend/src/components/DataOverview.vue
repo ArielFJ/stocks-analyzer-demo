@@ -6,7 +6,7 @@ import CardContainer from './ui/CardContainer.vue'
 import { useAnalytics } from '@/composables/useAnalytics'
 
 // Get analytics data from dedicated endpoint
-const { analytics, fetchAnalytics, loading, error } = useAnalytics()
+const { analytics, fetchAnalytics } = useAnalytics()
 
 // Computed values for template
 const analyticsData = computed(() => {

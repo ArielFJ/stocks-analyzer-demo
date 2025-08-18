@@ -144,9 +144,7 @@ const {
   totalItems,
   hasNextPage,
   hasPreviousPage,
-  fetchStocksPaginated,
-  goToPage,
-  refresh
+  fetchStocksPaginated
 } = useStocks({ pageSize: 12 })
 
 const { loading: syncLoading, syncAllStocks } = useApi()

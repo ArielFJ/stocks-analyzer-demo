@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { stockApi } from '@/services/stockApi'
-import type { FilterOptions as ApiFilterOptions, FilterOption } from '@/types/api'
+import type { FilterOption } from '@/types/api'
 
 export interface FilterOptions {
   actionType: string
@@ -63,15 +63,15 @@ export const useFiltersStore = defineStore('filters', () => {
 
   const hasActiveFilters = computed(() => activeFiltersCount.value > 0)
 
-  const currentActionTypeLabel = computed(() => 
+  const currentActionTypeLabel = computed(() =>
     actionTypeOptions.value.find(option => option.value === filters.value.actionType)?.label || 'All actions'
   )
 
-  const currentBrokerageLabel = computed(() => 
+  const currentBrokerageLabel = computed(() =>
     brokerageOptions.value.find(option => option.value === filters.value.brokerage)?.label || 'All brokerages'
   )
 
-  const currentSortByLabel = computed(() => 
+  const currentSortByLabel = computed(() =>
     sortByOptions.value.find(option => option.value === filters.value.sortBy)?.label || 'Newest'
   )
 
@@ -177,19 +177,19 @@ export const useFiltersStore = defineStore('filters', () => {
     filters,
     loading,
     error,
-    
+
     // Options
     actionTypeOptions,
     brokerageOptions,
     sortByOptions,
-    
+
     // Getters
     activeFiltersCount,
     hasActiveFilters,
     currentActionTypeLabel,
     currentBrokerageLabel,
     currentSortByLabel,
-    
+
     // Actions
     setActionType,
     setBrokerage,
@@ -198,7 +198,7 @@ export const useFiltersStore = defineStore('filters', () => {
     clearFilters,
     resetToDefaults,
     fetchFilterOptions,
-    
+
     // Utility functions
     filterTickers,
     sortTickers,

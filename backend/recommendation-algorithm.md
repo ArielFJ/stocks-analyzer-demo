@@ -48,9 +48,9 @@ flowchart TB
     R1 -->|No Change| R4[Add rating score only]
     
     TARGET --> T1{Target Change?}
-    T1 -->|>10% increase| T2[+20 points]
+    T1 -->|Over 10% increase| T2[+20 points]
     T1 -->|5-10% increase| T3[+10 points]
-    T1 -->|>10% decrease| T4[-15 points]
+    T1 -->|Over 10% decrease| T4[-15 points]
     T1 -->|5-10% decrease| T5[-8 points]
     
     ACTION --> A1{Action Type?}

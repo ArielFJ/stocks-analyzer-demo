@@ -4,7 +4,6 @@ import type {
   StockWithAnalysis,
   PaginationParams,
   StockFilterParams,
-  PaginatedResponse,
   PaginationMeta
 } from '@/types/api'
 
@@ -20,7 +19,7 @@ export function useStocks(options: UseStocksOptions = {}) {
   const stocks: Ref<StockWithAnalysis[]> = ref([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  
+
   // Pagination state
   const paginationMeta: Ref<PaginationMeta | null> = ref(null)
   const currentPage = ref(1)
@@ -75,7 +74,7 @@ export function useStocks(options: UseStocksOptions = {}) {
     if (page < 1 || page > totalPages.value) {
       return
     }
-    
+
     await fetchStocksPaginated({ page, page_size: pageSize })
   }
 
